@@ -1,6 +1,1 @@
-pip
-setuptools>=41.0.0
-click~=7.0.0
-cpython
-PyQt5
-fbs
+"Wed Jun 25 2014 07:02:00 GMT-0700 (Pacific Daylight Time)" 

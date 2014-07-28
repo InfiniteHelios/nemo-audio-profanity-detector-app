@@ -1,1 +1,2 @@
-"Wed Jul 23 2014 21:56:00 GMT-0700 (Pacific Daylight Time)" 
+# nemo-audio-profanity-detector-app
+Audio profanity detector desktop app developed with PyQt5 using Nvidia-Nemo tech.

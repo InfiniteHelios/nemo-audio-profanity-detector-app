@@ -1,0 +1,7 @@
+cython
+cpython
+PyQt5
+PyQt5_tools
+fbs
+nemo_toolkit
+nemo_asr

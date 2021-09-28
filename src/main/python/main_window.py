@@ -1,5 +1,4 @@
 import os
-import typing
 from PyQt5.QtCore import QObject, pyqtSlot, QThread, pyqtSignal, QDir, QFile
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QFileDialog
@@ -119,7 +118,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.convert_thread = ConvertThread(self.file, outfile, parent=self)
             self.file = outfile
             self.convert_thread.finished.connect(self.onConvertingFinished)
-            self.convert_thread.finished.connect(self.convert_thread.deleteLater)
             self.convert_thread.start()
         except Exception as err:
             QMessageBox.critical(self, "Error", err)
@@ -134,7 +132,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             )
             self.api_thread.progress.connect(self.onDetectingProgress)
             self.api_thread.finished.connect(self.onDetectingFinished)
-            self.api_thread.finished.connect(self.api_thread.deleteLater)
             self.api_thread.start()
             self.statusBar().showMessage("Transcribing...")
         except Exception as err:
@@ -159,7 +156,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 class ModelLoadingThread(QThread):
     finished = pyqtSignal(object)
 
-    def __init__(self, model_path, parent: typing.Optional[QObject] = ...) -> None:
+    def __init__(self, model_path, parent=None):
         super().__init__(parent=parent)
         self.model_path = model_path
 
@@ -178,14 +175,15 @@ class ModelLoadingThread(QThread):
 class ConvertThread(QThread):
     finished = pyqtSignal()
 
-    def __init__(self, file, outfile, parent: typing.Optional[QObject] = ...) -> None:
+    def __init__(self, file, outfile, parent=None):
         super().__init__(parent=parent)
         self.file = file
         self.outfile = outfile
 
     def run(self):
         try:
-            QFile.remove(self.outfile)
+            if QFile.exists(self.outfile):
+                QFile.remove(self.outfile)
             startupinfo = None
             if os.name == "nt":
                 startupinfo = subprocess.STARTUPINFO()
@@ -204,10 +202,11 @@ class ConvertThread(QThread):
                     self.outfile,
                 ],
                 stdout=subprocess.PIPE,
+                startupinfo=startupinfo,
             )
         except Exception as err:
             with open("log.txt", "a") as f:
-                f.write(str(err))
+                f.write(str(err) + "\n")
         finally:
             self.finished.emit()
 
@@ -217,8 +216,7 @@ class DetectorThread(QThread):
     progress = pyqtSignal(str)
 
     def __init__(
-        self, file, bad_words, asr_model, parent: typing.Optional[QObject] = ...
-    ) -> None:
+        self, file, bad_words, asr_model, parent=None):
         super().__init__(parent=parent)
         self.file = file
         self.bad_words = bad_words
@@ -230,12 +228,12 @@ class DetectorThread(QThread):
         return e / e.sum(axis=-1).reshape([logits.shape[0], 1])
 
     def run(self):
-        try:
-            # transcribe audio
-            transcript = self.asr_model.transcribe(paths2audio_files=[self.file])[0]
+        # transcribe audio
+        transcript = self.asr_model.transcribe(paths2audio_files=[self.file])[0]
 
-            # extract timestamps and split words
-            logits = self.asr_model.transcribe([self.file], logprobs=True)[0]
+        # extract timestamps and split words
+        logits = self.asr_model.transcribe([self.file], logprobs=True)[0]
+        try:
             probs = self.softmax(logits)
 
             # 20ms is duration of a timestep at output of the model

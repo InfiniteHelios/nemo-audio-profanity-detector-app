@@ -1,7 +1,6 @@
-cython
+pip
+setuptools>=41.0.0
+click~=7.0.0
 cpython
 PyQt5
-PyQt5_tools
 fbs
-nemo_toolkit
-nemo_asr
